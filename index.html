@@ -25,12 +25,21 @@
 
   <script>
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0a);
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x0a0a0a, 1);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
+
+    // WebGL check
+    if (!renderer.domElement || renderer.domElement.width === 0) {
+      const msg = document.createElement("div");
+      msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;color:#fff;padding:20px 30px;border-radius:12px;font-size:1.3em;text-align:center";
+      msg.innerHTML = "⚠️ 你的裝置唔支援 WebGL<br>請用較新 iPad 或 Chrome";
+      document.body.appendChild(msg);
+    }
     document.body.appendChild(renderer);
 
     // Lighting (realistic)
