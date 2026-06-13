@@ -139,39 +139,54 @@
     const ray = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    function onDown(e){
-      mouse.x = (e.clientX/window.innerWidth)*2-1;
-      mouse.y = -(e.clientY/window.innerHeight)*2+1;
-      ray.setFromCamera(mouse,camera);
-      const hits = ray.intersectObjects(plants, true);
-      if(hits.length) dragging = hits[0].object.parent;
+    // Mobile touch support
+    function getEventXY(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
     }
-    function onUp(){ dragging=null; document.getElementById('hint').style.display='none'; }
-    function onMove(e){
-      if(!dragging) return;
+
+    function onDown(e) {
+      const pos = getEventXY(e);
+      mouse.x = (pos.x / window.innerWidth) * 2 - 1;
+      mouse.y = -(pos.y / window.innerHeight) * 2 + 1;
+      ray.setFromCamera(mouse, camera);
+      const hits = ray.intersectObjects(plants, true);
+      if (hits.length) dragging = hits[0].object.parent;
+      e.preventDefault();
+    }
+    function onUp(e) { dragging = null; document.getElementById('hint').style.display = 'none'; }
+    function onMove(e) {
+      if (!dragging) return;
+      const pos = getEventXY(e);
       const rect = renderer.domElement.getBoundingClientRect();
-      const x = ((e.clientX-rect.left)/rect.width)*2-1;
-      const z = -((e.clientY-rect.top)/rect.height)*2+1;
-      dragging.position.x = x*10;
-      dragging.position.z = z*10;
-      // Environment reaction
+      const x = ((pos.x - rect.left) / rect.width) * 2 - 1;
+      const z = -((pos.y - rect.top) / rect.height) * 2 + 1;
+      dragging.position.x = x * 10;
+      dragging.position.z = z * 10;
       const hintEl = document.getElementById('hint');
-      if(dragging.userData.type==='cactus' && dragging.position.x>3){
+      if (dragging.userData.type === 'cactus' && dragging.position.x > 3) {
         ground.material.color.set(0xd2b48c);
         hintEl.innerText = '✅ 仙人掌鍾意沙漠！';
-        hintEl.style.display='block';
-      } else if(dragging.userData.type==='lotus' && dragging.position.z<-2){
+        hintEl.style.display = 'block';
+      } else if (dragging.userData.type === 'lotus' && dragging.position.z < -2) {
         ground.material.color.set(0x4169e1);
         hintEl.innerText = '✅ 荷花鍾意有水！';
-        hintEl.style.display='block';
+        hintEl.style.display = 'block';
       } else {
         ground.material.color.set(0x4a7c59);
-        hintEl.style.display='none';
+        hintEl.style.display = 'none';
       }
+      e.preventDefault();
     }
+
     renderer.domElement.addEventListener('mousedown', onDown);
     renderer.domElement.addEventListener('mouseup', onUp);
     renderer.domElement.addEventListener('mousemove', onMove);
+    renderer.domElement.addEventListener('touchstart', onDown, {passive:false});
+    renderer.domElement.addEventListener('touchend', onUp, {passive:false});
+    renderer.domElement.addEventListener('touchmove', onMove, {passive:false});
 
     // Click to speak
     renderer.domElement.addEventListener('click', e => {
