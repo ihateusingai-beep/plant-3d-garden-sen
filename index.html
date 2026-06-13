@@ -253,3 +253,28 @@
   </script>
 </body>
 </html>
+<script>
+// Full debug mode
+console.log('%c[3D DEBUG] Starting full diagnostics...', 'color:#0ff');
+
+const debugPanel = document.createElement('div');
+debugPanel.style.cssText = 'position:fixed;bottom:10px;right:10px;background:#111;color:#0f0;font:11px monospace;padding:8px 12px;border:1px solid #0f0;border-radius:4px;z-index:9999;opacity:0.9';
+document.body.appendChild(debugPanel);
+
+function updateDebug() {
+  const info = [
+    'WebGL: ' + (renderer.capabilities ? 'OK' : 'FAIL'),
+    'DevicePixelRatio: ' + window.devicePixelRatio,
+    'Plants: ' + (window.plants ? plants.length : 0),
+    'Mobile: ' + /iPad|iPhone|Android/i.test(navigator.userAgent)
+  ];
+  debugPanel.innerHTML = info.join('<br>');
+}
+setInterval(updateDebug, 1500);
+
+if (!renderer || !renderer.domElement) {
+  debugPanel.style.color = '#f00';
+  debugPanel.innerHTML = 'CRITICAL: WebGL failed to init';
+}
+console.log('%c[3D DEBUG] Diagnostics running', 'color:#0ff');
+</script>
