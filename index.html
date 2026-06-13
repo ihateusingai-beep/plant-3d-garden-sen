@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌿 3D 植物園 - SEN</title>
+  <style>
+    body { margin:0; overflow:hidden; background:#0a0a0a; font-family: system-ui; }
+    #info { position:absolute; top:20px; left:20px; color:#fff; background:rgba(0,0,0,0.6); padding:12px 20px; border-radius:12px; font-size:1.1em; }
+    #hint { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); color:#fff; background:rgba(245,158,11,0.9); padding:10px 24px; border-radius:9999px; font-size:1.1em; display:none; }
+    canvas { display:block; }
+  </style>
+</head>
+<body>
+  <div id="info">🌵 拖動仙人掌去不同環境<br>滑鼠旋轉視角 | 滾輪縮放</div>
+  <div id="hint">💡 提示：仙人掌鍾意乾旱地方！</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    // ===== 基本設定 =====
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer);
+
+    // HDRI-like 環境光（簡化版）
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xfff5e1, 1.2);
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // ===== 地面（沙漠 + 水塘切換） =====
+    const groundGeo = new THREE.PlaneGeometry(40, 40);
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0xd2b48c });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // ===== 簡單 3D 仙人掌（Procedural - 立體像真） =====
+    function createCactus() {
+      const group = new THREE.Group();
+
+      // 主幹
+      const trunkGeo = new THREE.CylinderGeometry(0.6, 0.8, 3.5, 12);
+      const trunkMat = new THREE.MeshLambertMaterial({ color: 0x2e8b57 });
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.castShadow = true;
+      group.add(trunk);
+
+      // 刺（粒子風格）
+      const spineGeo = new THREE.SphereGeometry(0.03, 6, 6);
+      const spineMat = new THREE.MeshLambertMaterial({ color: 0xcccccc });
+      for (let i = 0; i < 60; i++) {
+        const spine = new THREE.Mesh(spineGeo, spineMat);
+        const angle = (i / 60) * Math.PI * 2;
+        const y = (Math.random() - 0.5) * 3;
+        spine.position.set(Math.cos(angle) * 0.7, y, Math.sin(angle) * 0.7);
+        group.add(spine);
+      }
+
+      // 手臂
+      const armGeo = new THREE.CylinderGeometry(0.25, 0.3, 1.2, 10);
+      const arm1 = new THREE.Mesh(armGeo, trunkMat);
+      arm1.position.set(1.1, 0.8, 0);
+      arm1.rotation.z = 1.2;
+      group.add(arm1);
+      const arm2 = arm1.clone();
+      arm2.position.set(-1.1, 0.8, 0);
+      arm2.rotation.z = -1.2;
+      group.add(arm2);
+
+      group.userData = { type: 'cactus', originalY: 0 };
+      return group;
+    }
+
+    const cactus = createCactus();
+    cactus.position.set(0, 1.75, 0);
+    scene.add(cactus);
+
+    // ===== 風吹粒子（落葉效果） =====
+    const particleCount = 80;
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = [];
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 30;
+      positions[i + 1] = Math.random() * 8 + 2;
+      positions[i + 2] = (Math.random() - 0.5) * 30;
+      velocities.push({
+        x: (Math.random() - 0.5) * 0.02,
+        y: -0.015 - Math.random() * 0.01,
+        z: (Math.random() - 0.5) * 0.02
+      });
+    }
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particleMat = new THREE.PointsMaterial({ color: 0x90ee90, size: 0.12, transparent: true, opacity: 0.7 });
+    const particleSystem = new THREE.Points(particles, particleMat);
+    scene.add(particleSystem);
+
+    // ===== 控制 =====
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+    controls.maxPolarAngle = Math.PI * 0.85; // 鎖定避免翻轉
+    controls.minDistance = 3;
+    controls.maxDistance = 18;
+
+    camera.position.set(6, 5, 8);
+    controls.target.set(0, 1.5, 0);
+
+    // ===== 拖動功能（簡易版） =====
+    let isDragging = false;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function onMouseDown(e) {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(cactus, true);
+      if (intersects.length > 0) isDragging = true;
+    }
+    function onMouseUp() { isDragging = false; }
+    function onMouseMove(e) {
+      if (!isDragging) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const z = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      cactus.position.x = x * 8;
+      cactus.position.z = z * 8;
+      // 簡單環境反應
+      if (cactus.position.x > 4) {
+        groundMat.color.set(0xd2b48c); // 沙漠
+        document.getElementById('hint').style.display = 'block';
+      } else {
+        groundMat.color.set(0x4a7c59); // 綠地
+        document.getElementById('hint').style.display = 'none';
+      }
+    }
+
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    renderer.domElement.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
+
+    // ===== 語音提示（SEN） =====
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-HK';
+      window.speechSynthesis.speak(utter);
+    }
+    // 點擊仙人掌說話
+    renderer.domElement.addEventListener('click', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      if (raycaster.intersectObject(cactus, true).length > 0) {
+        speak('我係仙人掌，鍾意乾旱地方！');
+      }
+    });
+
+    // ===== 動畫循環 =====
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+
+      // 風吹粒子
+      const pos = particles.attributes.position;
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        pos.array[i3] += velocities[i].x;
+        pos.array[i3 + 1] += velocities[i].y;
+        pos.array[i3 + 2] += velocities[i].z;
+        if (pos.array[i3 + 1] < 0) {
+          pos.array[i3 + 1] = 8;
+          pos.array[i3] = (Math.random() - 0.5) * 30;
+          pos.array[i3 + 2] = (Math.random() - 0.5) * 30;
+        }
+      }
+      pos.needsUpdate = true;
+
+      // 輕微搖晃（風吹效果）
+      cactus.rotation.y = Math.sin(Date.now() / 800) * 0.03;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ===== Resize =====
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 初始語音提示
+    setTimeout(() => speak('歡迎嚟到3D植物園！試下拖動仙人掌'), 800);
+    console.log('%c[plant-3d-garden-sen] Realistic Three.js scaffold ready', 'color:#4ade80');
+  </script>
+</body>
+</html>
