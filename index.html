@@ -3,269 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌿 3D 植物園 - SEN</title>
+  <title>🌿 3D植物園 - Test</title>
   <style>
-    body { margin:0; overflow:hidden; background:#0a0a0a; font-family: system-ui; }
-    #info { position:absolute; top:20px; left:20px; color:#fff; background:rgba(0,0,0,0.6); padding:12px 20px; border-radius:12px; font-size:1.1em; z-index:10; }
-    #hint { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); color:#fff; background:rgba(245,158,11,0.95); padding:10px 24px; border-radius:9999px; font-size:1.1em; display:none; z-index:10; }
-    .plant-label { position:absolute; background:rgba(0,0,0,0.7); color:#fff; padding:4px 10px; border-radius:6px; font-size:0.9em; pointer-events:none; }
+    body { margin:0; background:#0a0a0a; overflow:hidden; }
+    #status { position:fixed; top:20px; left:20px; color:#fff; background:#222; padding:10px 16px; border-radius:8px; font-size:14px; }
   </style>
 </head>
 <body>
-  <div id="toolbar" style="position:fixed;top:0;left:0;right:0;height:68px;background:#111827;color:#fff;display:flex;align-items:center;padding:0 24px;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,0.4)">
-    <div style="font-size:1.6em;font-weight:700;margin-right:30px">🌿 3D植物園</div>
-    <button onclick="resetScene()" style="margin-right:12px;padding:10px 22px;font-size:1.1em;background:#374151;border:none;color:#fff;border-radius:9999px">🔄 重置</button>
-    <button onclick="speakAll()" style="margin-right:12px;padding:10px 22px;font-size:1.1em;background:#374151;border:none;color:#fff;border-radius:9999px">🔊 全部朗讀</button>
-    <div style="margin-left:auto;font-size:0.95em;opacity:0.7">SEN 小四科學 • 拖動植物探索環境</div>
-  </div>
-  <div id="hint"></div>
+  <div id="status">載入中...</div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 
   <script>
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x0a0a0a, 1);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
+    const status = document.getElementById('status');
 
-    // WebGL check
-    if (!renderer.domElement || renderer.domElement.width === 0) {
-      const msg = document.createElement("div");
-      msg.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;color:#fff;padding:20px 30px;border-radius:12px;font-size:1.3em;text-align:center";
-      msg.innerHTML = "⚠️ 你的裝置唔支援 WebGL<br>請用較新 iPad 或 Chrome";
-      document.body.appendChild(msg);
-    }
-    document.body.appendChild(renderer);
+    try {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0a);
 
-    // Lighting (realistic)
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const sun = new THREE.DirectionalLight(0xfff5e1, 1.3);
-    sun.position.set(15, 25, 10);
-    sun.castShadow = true;
-    scene.add(sun);
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(4, 3, 5);
 
-    // Ground
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(50, 50),
-      new THREE.MeshLambertMaterial({color:0xd2b48c})
-    );
-    ground.rotation.x = -Math.PI/2;
-    ground.receiveShadow = true;
-    scene.add(ground);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer);
 
-    // Plants container
-    const plants = [];
+      // Simple test cube
+      const geometry = new THREE.BoxGeometry(2, 2, 2);
+      const material = new THREE.MeshLambertMaterial({ color: 0x4ade80 });
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
 
-    // ========== 1. CACTUS (Desert) ==========
-    function createCactus() {
-      const g = new THREE.Group();
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.75,3.2,12), new THREE.MeshLambertMaterial({color:0x2e8b57}));
-      g.add(trunk);
-      for(let i=0;i<55;i++){
-        const s = new THREE.Mesh(new THREE.SphereGeometry(0.028,5,5), new THREE.MeshLambertMaterial({color:0xddd}));
-        const a = i/55*Math.PI*2; s.position.set(Math.cos(a)*0.65, (Math.random()-0.5)*2.8, Math.sin(a)*0.65);
-        g.add(s);
+      // Light
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(10, 20, 10);
+      scene.add(light);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
       }
-      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,1.1,10), trunk.material);
-      arm.position.set(1,0.7,0); arm.rotation.z=1.3; g.add(arm);
-      const arm2 = arm.clone(); arm2.position.x=-1; arm2.rotation.z=-1.3; g.add(arm2);
-      g.userData = {type:'cactus', env:'desert'};
-      return g;
+      animate();
+
+      status.innerHTML = '✅ WebGL 正常運作<br>如果仲係黑屏，可能是 Safari 設定問題';
+      status.style.background = '#166534';
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      console.log('%c[3D Test] Minimal Three.js r134 working', 'color:#4ade80');
+
+    } catch (e) {
+      status.innerHTML = '❌ 錯誤: ' + e.message;
+      status.style.background = '#7f1d1d';
+      console.error(e);
     }
-
-    // ========== 2. LOTUS (Water) ==========
-    function createLotus() {
-      const g = new THREE.Group();
-      const leaf = new THREE.Mesh(new THREE.CircleGeometry(1.4, 8), new THREE.MeshLambertMaterial({color:0x228b22, side:2}));
-      leaf.rotation.x = -1.4; g.add(leaf);
-      const flower = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.9, 8), new THREE.MeshLambertMaterial({color:0xff69b4}));
-      flower.position.y = 0.6; g.add(flower);
-      g.userData = {type:'lotus', env:'water'};
-      return g;
-    }
-
-    // ========== 3. SUNFLOWER (Sun) ==========
-    function createSunflower() {
-      const g = new THREE.Group();
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.15,2.8,8), new THREE.MeshLambertMaterial({color:0x228b22}));
-      g.add(stem);
-      const head = new THREE.Mesh(new THREE.CircleGeometry(0.9, 16), new THREE.MeshLambertMaterial({color:0xffd700}));
-      head.position.y = 1.8; g.add(head);
-      g.userData = {type:'sunflower', env:'sun', angle:0};
-      return g;
-    }
-
-    // ========== 4. STRAWBERRY (Human) ==========
-    function createStrawberry() {
-      const g = new THREE.Group();
-      const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), new THREE.MeshLambertMaterial({color:0xe32636}));
-      fruit.position.y = 0.6; g.add(fruit);
-      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.5,0.4,6), new THREE.MeshLambertMaterial({color:0x228b22}));
-      leaf.position.y = 1.1; g.add(leaf);
-      g.userData = {type:'strawberry', env:'human'};
-      return g;
-    }
-
-    // ========== 5. GINKGO (Season) ==========
-    function createGinkgo() {
-      const g = new THREE.Group();
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.25,3,8), new THREE.MeshLambertMaterial({color:0x8b4513}));
-      g.add(trunk);
-      const leaf = new THREE.Mesh(new THREE.CircleGeometry(0.7, 8), new THREE.MeshLambertMaterial({color:0x9acd32}));
-      leaf.position.y = 2.2; g.add(leaf);
-      g.userData = {type:'ginkgo', env:'season', season:0};
-      return g;
-    }
-
-    // Add all plants
-    const cactus = createCactus(); cactus.position.set(-6,1.6,0); scene.add(cactus); plants.push(cactus);
-    const lotus = createLotus(); lotus.position.set(5,0.3,-3); scene.add(lotus); plants.push(lotus);
-    const sunflower = createSunflower(); sunflower.position.set(0,1.4,5); scene.add(sunflower); plants.push(sunflower);
-    const strawberry = createStrawberry(); strawberry.position.set(-3,0.6,4); scene.add(strawberry); plants.push(strawberry);
-    const ginkgo = createGinkgo(); ginkgo.position.set(7,1.5,2); scene.add(ginkgo); plants.push(ginkgo);
-
-const bamboo = createBamboo(); bamboo.position.set(-8,1.75,-5); scene.add(bamboo); plants.push(bamboo);
-const rose = createRose(); rose.position.set(3,0.9,7); scene.add(rose); plants.push(rose);
-const pine = createPine(); pine.position.set(-5,1.25,-7); scene.add(pine); plants.push(pine);
-
-const apple = createApple(); apple.position.set(8,1.1,5); scene.add(apple); plants.push(apple);
-const maple = createMaple(); maple.position.set(-9,1.4,3); scene.add(maple); plants.push(maple);
-const cherry = createCherry(); cherry.position.set(6,1.25,-6); scene.add(cherry); plants.push(cherry);
-
-    // Wind particles
-    const pCount = 120;
-    const pGeo = new THREE.BufferGeometry();
-    const pPos = new Float32Array(pCount*3);
-    const pVel = [];
-    for(let i=0;i<pCount*3;i+=3){
-      pPos[i]=(Math.random()-0.5)*40; pPos[i+1]=Math.random()*10+1; pPos[i+2]=(Math.random()-0.5)*40;
-      pVel.push({x:(Math.random()-0.5)*0.025, y:-0.02-Math.random()*0.015, z:(Math.random()-0.5)*0.025});
-    }
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
-    const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({color:0x90ee90, size:0.1, transparent:true, opacity:0.65}));
-    scene.add(particles);
-
-    // Controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; controls.dampingFactor = 0.12;
-    controls.maxPolarAngle = Math.PI*0.82; controls.minDistance=3; controls.maxDistance=22;
-    camera.position.set(8,6,12); controls.target.set(0,1.5,0);
-
-    // Drag system
-    let dragging = null;
-    const ray = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    // Mobile touch support
-    function getEventXY(e) {
-      if (e.touches && e.touches.length > 0) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
-      return { x: e.clientX, y: e.clientY };
-    }
-
-    function onDown(e) {
-      const pos = getEventXY(e);
-      mouse.x = (pos.x / window.innerWidth) * 2 - 1;
-      mouse.y = -(pos.y / window.innerHeight) * 2 + 1;
-      ray.setFromCamera(mouse, camera);
-      const hits = ray.intersectObjects(plants, true);
-      if (hits.length) dragging = hits[0].object.parent;
-      e.preventDefault();
-    }
-    function onUp(e) { dragging = null; document.getElementById('hint').style.display = 'none'; }
-    function onMove(e) {
-      if (!dragging) return;
-      const pos = getEventXY(e);
-      const rect = renderer.domElement.getBoundingClientRect();
-      const x = ((pos.x - rect.left) / rect.width) * 2 - 1;
-      const z = -((pos.y - rect.top) / rect.height) * 2 + 1;
-      dragging.position.x = x * 10;
-      dragging.position.z = z * 10;
-      const hintEl = document.getElementById('hint');
-      if (dragging.userData.type === 'cactus' && dragging.position.x > 3) {
-        ground.material.color.set(0xd2b48c);
-        hintEl.innerText = '✅ 仙人掌鍾意沙漠！';
-        hintEl.style.display = 'block';
-      } else if (dragging.userData.type === 'lotus' && dragging.position.z < -2) {
-        ground.material.color.set(0x4169e1);
-        hintEl.innerText = '✅ 荷花鍾意有水！';
-        hintEl.style.display = 'block';
-      } else {
-        ground.material.color.set(0x4a7c59);
-        hintEl.style.display = 'none';
-      }
-      e.preventDefault();
-    }
-
-    renderer.domElement.addEventListener('mousedown', onDown);
-    renderer.domElement.addEventListener('mouseup', onUp);
-    renderer.domElement.addEventListener('mousemove', onMove);
-    renderer.domElement.addEventListener('touchstart', onDown, {passive:false});
-    renderer.domElement.addEventListener('touchend', onUp, {passive:false});
-    renderer.domElement.addEventListener('touchmove', onMove, {passive:false});
-
-    // Click to speak
-    renderer.domElement.addEventListener('click', e => {
-      mouse.x = (e.clientX/window.innerWidth)*2-1;
-      mouse.y = -(e.clientY/window.innerHeight)*2+1;
-      ray.setFromCamera(mouse,camera);
-      const hit = ray.intersectObjects(plants,true)[0];
-      if(!hit) return;
-      const p = hit.object.parent;
-      const map = {
-        cactus: '我係仙人掌，鍾意乾旱地方！',
-        lotus: '我係荷花，鍾意有水嘅地方！',
-        sunflower: '我會跟住太陽轉向！',
-        strawberry: '我可以俾你食，好甜！',
-        ginkgo: '我係銀杏，秋天會變黃！'
-      };
-      const utter = new SpeechSynthesisUtterance(map[p.userData.type]||'你好！');
-      utter.lang='zh-HK'; window.speechSynthesis.speak(utter);
-    });
-
-    // Animation
-    function animate(){
-      requestAnimationFrame(animate);
-      controls.update();
-
-      // Wind particles
-      const pos = particles.geometry.attributes.position;
-      for(let i=0;i<pCount;i++){
-        const i3=i*3;
-        pos.array[i3]+=pVel[i].x; pos.array[i3+1]+=pVel[i].y; pos.array[i3+2]+=pVel[i].z;
-        if(pos.array[i3+1]<0){ pos.array[i3+1]=10; pos.array[i3]=(Math.random()-0.5)*40; pos.array[i3+2]=(Math.random()-0.5)*40; }
-      }
-      pos.needsUpdate=true;
-
-      // Sunflower follows sun (simple)
-      sunflower.rotation.y = Math.sin(Date.now()/1200)*0.6;
-
-      // Ginkgo season change (color)
-      const season = (Date.now()/8000)%2;
-      ginkgo.children[1].material.color.set(season<1 ? 0x9acd32 : 0xffa500);
-
-      // Gentle sway
-      plants.forEach(p=>{
-        if(p.userData.type==='bamboo' || p.userData.type==='ginkgo')
-
-    // Helper functions
-    function resetScene() {
-      const positions = [[-6,1.6,0],[5,0.3,-3],[0,1.4,5],[-3,0.6,4],[7,1.5,2],[-8,1.75,-5],[3,0.9,7],[-5,1.25,-7],[8,1.1,5],[-9,1.4,3],[6,1.25,-6]];
-      plants.forEach((p,i) => { if (positions[i]) p.position.set(...positions[i]); });
-      ground.material.color.set(0xd2b48c);
-    }
-    function speakAll() {
-      const texts = ["仙人掌鍾意沙漠","荷花鍾意有水","向日葵會跟太陽轉","草莓可以俾你食","銀杏秋天變黃"];
-      texts.forEach((t,i) => setTimeout(() => { const u = new SpeechSynthesisUtterance(t); u.lang="zh-HK"; speechSynthesis.speak(u); }, i*850));
-    }
-
-    console.log('%c[plant-3d-garden-sen] Ready', 'color:#4ade80');
   </script>
 </body>
 </html>
